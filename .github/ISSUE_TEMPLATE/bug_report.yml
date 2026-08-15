@@ -1,0 +1,99 @@
+name: Bug Report
+description: Report a bug or unexpected behavior
+title: "[Bug]: "
+labels: [bug]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing:
+        - Running **macOS 13+**
+        - Vacate has **Accessibility** enabled under **System Settings -> Privacy & Security -> Accessibility**
+        - Searched existing issues for duplicates
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What's wrong
+      description: What happened?
+      placeholder: "Example: Closing the last window of App X leaves the app running."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Enable Vacate in the menu bar
+        2. Launch [App Name]
+        3. Close all of its windows
+        4. App stays in the Dock / Activity Monitor
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+      description: What should have happened?
+      placeholder: "Example: The app should quit after its last window closes."
+    validations:
+      required: false
+
+  - type: textarea
+    id: affected_apps
+    attributes:
+      label: Affected apps
+      description: Which apps show this?
+      placeholder: "Example: Safari, Slack"
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: Vacate version
+      description: Release tag, Nightly, or commit hash.
+      placeholder: "Example: v1.0.0, Nightly, or abc1234"
+    validations:
+      required: true
+
+  - type: input
+    id: macos_version
+    attributes:
+      label: macOS version
+      description: Version and chip/architecture.
+      placeholder: "Example: macOS 15.1 (Apple Silicon) / macOS 14.6 (Intel)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: accessibility
+    attributes:
+      label: Accessibility Permission Granted?
+      description: Has Vacate been granted Accessibility permission in macOS System Settings?
+      options:
+        - "Yes"
+        - "No"
+        - "Unsure"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / screenshots
+      description: |
+        Console.app output filtered for `xyz.sternserv.Vacate`, crash reports, or screenshots.
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Extra context
+      description: Anything else that might help.
+    validations:
+      required: false

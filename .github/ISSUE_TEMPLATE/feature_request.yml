@@ -1,0 +1,45 @@
+name: Feature Request
+description: Suggest a feature or improvement
+title: "[Feature]: "
+labels: [enhancement]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check existing issues first so we don't get duplicates.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What do you want?
+      placeholder: "Example: Global hotkey to toggle Vacate on/off."
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Why?
+      description: What problem does this solve?
+      placeholder: "Example: I often want to temporarily disable Vacate during multi-window work."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_behavior
+    attributes:
+      label: How it should work
+      description: Sketch the behavior if you have one in mind.
+      placeholder: "Example: Hotkey recorder in the menu to toggle monitoring."
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Extra context
+      description: Screenshots, mockups, or anything else.
+    validations:
+      required: false

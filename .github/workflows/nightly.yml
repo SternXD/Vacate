@@ -1,0 +1,99 @@
+name: Nightly Build
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - '.gitignore'
+      - '.github/**'
+  schedule:
+    - cron: "0 0 * * *" # Daily at midnight UTC
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Check latest release
+        id: check-stable
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SHA="${GITHUB_SHA}"
+          STABLE_TAG=$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq .tag_name 2>/dev/null || true)
+          if [ -n "$STABLE_TAG" ]; then
+            STABLE_SHA=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${STABLE_TAG}" --jq .sha 2>/dev/null || git rev-parse "${STABLE_TAG}^{commit}" 2>/dev/null || true)
+            if [ -n "$STABLE_SHA" ] && [ "$STABLE_SHA" = "$SHA" ]; then
+              echo "Commit matches stable ($STABLE_TAG), skipping nightly"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Install tools
+        if: steps.check-stable.outputs.skip != 'true'
+        run: npm install --global create-dmg
+
+      - name: Build DMG
+        if: steps.check-stable.outputs.skip != 'true'
+        run: ./scripts/make-dmg.sh
+
+      - name: Upload Artifact
+        if: steps.check-stable.outputs.skip != 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: Vacate-nightly
+          path: dist/*.dmg
+
+      - name: Publish Nightly Release
+        if: steps.check-stable.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SHA="${GITHUB_SHA}"
+          PREV=$(gh api "repos/${GITHUB_REPOSITORY}/commits/nightly" --jq .sha 2>/dev/null || true)
+          VERSION=$(defaults read "$PWD/build/Build/Products/Release/Vacate.app/Contents/Info" CFBundleShortVersionString)
+
+          {
+            echo "⚠️ Nightly from [${SHA}](https://github.com/${GITHUB_REPOSITORY}/commit/${SHA})."
+            echo
+            echo "Built off master, expect bugs. Don't use this as your daily build."
+            echo
+            echo "## Build Info"
+            echo
+            echo "UTC: \`$(date -u '+%Y-%m-%d %H:%M:%S')\`"
+            echo "Commit: \`${SHA}\`"
+            echo "Version: \`${VERSION}-$(date -u +%Y%m%d)-${SHA:0:7}\`"
+            echo
+            echo "## What's Changed"
+            echo
+            if [ -n "$PREV" ] && [ "$PREV" != "$SHA" ]; then
+              git log --pretty='- %s' "$PREV..$SHA" || true
+              echo
+              echo "[${PREV:0:7}...${SHA:0:7}](https://github.com/${GITHUB_REPOSITORY}/compare/${PREV}...${SHA})"
+            else
+              echo "- nothing to compare yet"
+            fi
+          } > /tmp/nightly-notes.md
+
+          gh release delete nightly --yes --cleanup-tag || true
+          gh release create nightly dist/*.dmg \
+            --title "Nightly Build" \
+            --notes-file /tmp/nightly-notes.md \
+            --prerelease
